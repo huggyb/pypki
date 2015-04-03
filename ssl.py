@@ -1,7 +1,8 @@
 #!/usr/bin/python3.4
 
-
+import getopt
 import re
+import sys
 
 from OpenSSL import crypto, SSL
 from socket import gethostname
@@ -9,6 +10,12 @@ from pprint import pprint
 from time import gmtime, mktime
 from os.path import exists, join
 
+CA_CERT = 'cacert.crt'
+CA_KEY = 'cakey.key'
+PKI_DIR = 'key'
+
+# Function cert_request
+# Setup certificate attributes
 def cert_request ():
     """
     Certificate request
@@ -30,30 +37,49 @@ def cert_request ():
     cert.set_issuer(cert.get_subject())
     return cert
 
-PKI_DIR='key'
 
 
+def showhelp ():
+    print("usage: ssl.py [OPTIONS]")
+    print("\t-c --create\t-create clients certificates + key")
+    print("\t--genca\t\t-create new ca")
+    print("\t-h --help\t-print this menu")
 
-# genkey
-k = crypto.PKey()
-k.generate_key(crypto.TYPE_RSA, 2048)
+# Parse command line arguments
+if len(sys.argv) == 0:
+    print ('usage : ' + usage)
+    sys.exit(1)
 
-mycert = cert_request()
+try:
+    opts, args = getopt.getopt(sys.argv[1:],"ch:",["create","genca","help"])
+except getopt.GetoptError:
+    print ('usage : ' + usage)
+    sys.exit(2)
+for opt, arg in opts:
+    if opt in ( "-c", "--create" ):
+        NEWREQ=1
+    elif opt in ( "--genca" ):
+        print("Create new CA")
+        CA=1
+    elif opt in ( "-h", "--help" ):
+        showhelp()
+        sys.exit(3)
+    else:
+        showhelp()
+        sys.exit(5)
 
-mycert.set_pubkey(k)
-mycert.sign( k, 'sha256' )
 
-mycn = mycert.get_subject().CN
+if CA == 1:
+    # genkey
+    k = crypto.PKey()
+    k.generate_key(crypto.TYPE_RSA, 2048)
 
-print(mycn)
-
-open( PKI_DIR + "/" + mycn + ".crt", "wb" ).write( crypto.dump_certificate( crypto.FILETYPE_PEM, mycert ))
-
-open ( PKI_DIR + "/" + mycn + ".key", "wb" ).write( crypto.dump_privatekey( crypto.FILETYPE_PEM, k ))
-
-# Function cert_request
-# Setup certificate attributes
-
-
+    mycert = cert_request()
+    mycert.set_pubkey(k)
+    mycert.sign( k, 'sha256' )
+    mycn = mycert.get_subject().CN
+    
+    open( PKI_DIR + '/' + CA_CERT, "wb" ).write( crypto.dump_certificate( crypto.FILETYPE_PEM, mycert ))
+    open ( PKI_DIR + '/' + CA_KEY, "wb" ).write( crypto.dump_privatekey( crypto.FILETYPE_PEM, k ))
 
 
