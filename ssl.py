@@ -3,6 +3,7 @@
 import getopt
 import re
 import sys
+import os.path
 
 from OpenSSL import crypto, SSL
 from socket import gethostname
@@ -37,8 +38,6 @@ def cert_request ():
     cert.set_issuer(cert.get_subject())
     return cert
 
-
-
 def showhelp ():
     print("usage: ssl.py [OPTIONS]")
     print("\t-c --create\t-create clients certificates + key")
@@ -53,13 +52,13 @@ if len(sys.argv) == 0:
 try:
     opts, args = getopt.getopt(sys.argv[1:],"ch:",["create","genca","help"])
 except getopt.GetoptError:
-    print ('usage : ' + usage)
+    showhelp()
     sys.exit(2)
 for opt, arg in opts:
     if opt in ( "-c", "--create" ):
         NEWREQ=1
     elif opt in ( "--genca" ):
-        print("Create new CA")
+        print( "Create new CA" )
         CA=1
     elif opt in ( "-h", "--help" ):
         showhelp()
@@ -69,7 +68,11 @@ for opt, arg in opts:
         sys.exit(5)
 
 
+# main 
 if CA == 1:
+    if os.path.isfile( PKI_DIR + '/' + CA_CERT ) and os.path.isfile( PKI_DIR + '/' + CA_KEY ):
+        print('There is an existing CA')
+        
     # genkey
     k = crypto.PKey()
     k.generate_key(crypto.TYPE_RSA, 2048)
