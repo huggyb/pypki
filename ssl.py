@@ -101,7 +101,7 @@ for opt, arg in opts:
 
 
 # main
-if CA == 1:
+if CA == 1 and DEFCA == 0:
     if os.path.isfile( PKI_DIR + '/' + CA_CERT ) and os.path.isfile( 
             PKI_DIR + '/' + CA_KEY ):
         print('There is an existing CA')
@@ -109,7 +109,7 @@ if CA == 1:
     print( 'Create new CA' )
 
     # get certificate attribues
-if DEFCA == 1:
+if CA == 1 and DEFCA == 1:
     my_attr = [ 'PL', 'Poneyland', 'kichland', 'Poney Corp', 'info',
             'ROOT-CA Poney CORP' ]
 else:
