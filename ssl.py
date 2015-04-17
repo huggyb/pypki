@@ -6,24 +6,14 @@ import argparse
 
 from OpenSSL import crypto
 
+from utils import check_and_create_dir, exists_and_isfile
+
 CA_CERT = 'cacert.crt'
 CA_KEY = 'cakey.key'
 PKI_DIR = 'key'
 
 CA_CERT_FULLPATH = os.path.join(PKI_DIR, CA_CERT)
 CA_KEY_FULLPATH = os.path.join(PKI_DIR, CA_KEY)
-
-
-def check_and_create_pki_dir():
-    """
-    If the directory where the certificates and keys are stored doesn't exist, then create it.
-    """
-    if not os.path.exists(PKI_DIR):
-        os.makedirs(PKI_DIR)
-
-
-def exists_and_isfile(path):
-    return os.path.exists(path) and os.path.isfile(path)
 
 
 def cert_request(list_attr):
@@ -73,7 +63,7 @@ def main():
                         action='store_true', default=False)
     args = parser.parse_args()
 
-    check_and_create_pki_dir()
+    check_and_create_dir(PKI_DIR)
 
     if args.generate_ca or args.default_ca:
         if exists_and_isfile(CA_CERT_FULLPATH) and exists_and_isfile(CA_KEY_FULLPATH):
