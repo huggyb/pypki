@@ -53,11 +53,6 @@ def csr_req(list_attr):
     cert.get_subject().CN = list_attr[5]
     cert.set_serial_number(1)
 
-    # valid period
-
-    cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(315360000)
-
     return cert
 
 def get_attr():
@@ -82,6 +77,8 @@ def main():
                         default=False)
     parser.add_argument('-l', '--list', help="List all certificates and keys that are present in the pki.",
                         action='store_true', default=False)
+    parser.add_argument('-r', '--default-req', help="Creates client certificate and keys with default attributes.", 
+                        action='store_true', default=False)
     args = parser.parse_args()
 
     check_and_create_dir(PKI_DIR)
@@ -91,7 +88,7 @@ def main():
             print('There is an existing CA')
             return
         if args.default_ca:
-            default_attrs = ['PL', 'Poneyland', 'kichland', 'Poney Corp', 'info', 'ROOT-CA Poney CORP']
+            default_attrs = ['PL', 'Poneyland', 'kichland', 'Poney Corp', 'ROOT-CA', 'ROOT-CA Poney CORP']
         else:
             default_attrs = get_attr()
 
@@ -106,7 +103,12 @@ def main():
             fd.write(crypto.dump_certificate(crypto.FILETYPE_PEM, my_cert))
         with open(CA_KEY_FULLPATH, 'wb') as fd:
             fd.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, k))
-    elif args.create:
+    elif args.create or args.default_req:
+        if args.default_req:
+            cli_attrs = ['PL', 'Poneyland', 'kichland', 'Poney Corp', 'info', 'poney_test']
+        else:
+            cli_attrs = get_attr()
+
         # load ROOT CA private key
         ca_key_fd = open(CA_KEY_FULLPATH, 'rb').read()
         ca_key = crypto.load_privatekey(crypto.FILETYPE_PEM, ca_key_fd )
@@ -115,7 +117,6 @@ def main():
         # create csr 
         cli_pkey = crypto.PKey()
         cli_pkey.generate_key(crypto.TYPE_RSA, 2048)
-        cli_attrs = get_attr()
         cli_csr = csr_req( cli_attrs )
         cli_csr.set_pubkey(cli_pkey)
         cli_csr.sign( cli_pkey, 'sha256')
@@ -124,6 +125,7 @@ def main():
         cli_cert.set_issuer(ca_cert.get_subject())
         cli_cert.gmtime_adj_notBefore(0)
         cli_cert.gmtime_adj_notAfter(315360000)
+        cli_cert.set_serial_number(cli_csr.get_serial_number())
         cli_cert.set_subject(cli_csr.get_subject())
         cli_cert.set_pubkey(cli_csr.get_pubkey())
         cli_cert.sign( ca_key, 'sha256')
